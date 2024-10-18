@@ -1,6 +1,14 @@
 # Change Log
 All notable changes in Bluetooth Vendor Hardware Abstraction Layer(BT VHAL) will be documented in this file.
 
+## [009.027] - 2024-September-13
+
+### Added
+- Added support to configure BT/BLE Power configurations using power
+  configuration file via pFilename_tx_power.
+- Deprecated ble_1m_powe, ble_2m_power, bt_max_power_sel configurations
+  from bt_vendor.conf
+
 ## [009.024] - 2024-January-04
 
 ### Fixed

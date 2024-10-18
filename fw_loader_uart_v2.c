@@ -46,7 +46,7 @@
 #define VERSION "M206"
 #define MAX_LENGTH 0xFFFF  // Maximum 2 byte value
 #define END_SIG_TIMEOUT 2500
-#define MAX_CTS_TIMEOUT 5000  // 5s
+#define FW_INIT_TIMEOUT 5000  // 5s
 #define STRING_SIZE 6
 #define HDR_LEN 16
 #define CMD4 0x4
@@ -969,12 +969,12 @@ uint32 bt_vnd_mrvl_download_fw_v2(int8* pPortName, uint32 iBaudrate,
         } while (endTime > fw_upload_GetTime());
       }
       if (uiReDownload == false) {
-        if (fw_upload_ComGetCTS_after_fw_dwnl(mchar_fd, MAX_CTS_TIMEOUT) ==
+        if (fw_upload_ComGetCTS_after_fw_dwnl(mchar_fd, FW_INIT_TIMEOUT) ==
             true) {
-          VND_LOGD("CTS is low");
+          VND_LOGD("FW Init Complete,proceeding with configurations");
         } else {
-          VND_LOGE("wait CTS low timeout. Total_duration = %d",
-                   MAX_CTS_TIMEOUT);
+          VND_LOGD("FW Init timeout= %d expired,proceeding with configurations",
+                   FW_INIT_TIMEOUT);
           VND_LOGV("Error code is %d", ulResult);
         }
         if (pFile) {

@@ -49,7 +49,7 @@
 #define VERSION "M322"
 #define MAX_LENGTH 0xFFFF  // Maximum 2 byte value
 #define END_SIG_TIMEOUT 2500
-#define MAX_CTS_TIMEOUT 500  // 500ms
+#define FW_INIT_TIMEOUT 250  // 250ms
 #define STRING_SIZE 6U
 #define HDR_LEN 16U
 #define CMD4 0x4U
@@ -421,7 +421,7 @@ static bool fw_upload_WaitForHeaderSignature(uint32 uiMs) {
           uiProVer = Ver1;
         } else {
           uiProVer = Ver3;
-          if (V3_START_INDICATION) {
+          if (ucRcvdHeader == V3_START_INDICATION) {
             memset(&v3_start_ind, 0, sizeof(v3_start_ind));
             v3_start_ind.pkt_hdr = V3_START_INDICATION;
             while (fw_upload_GetBufferSize(mchar_fd) <
@@ -2324,10 +2324,11 @@ uint32 bt_vnd_mrvl_download_fw(int8* pPortName, uint32 iBaudrate,
     VND_LOGI("Download Complete");
     cost = fw_upload_GetTime() - start;
     VND_LOGD("time:%llu", cost);
-    if (fw_upload_ComGetCTS_after_fw_dwnl(mchar_fd, MAX_CTS_TIMEOUT) == true) {
-      VND_LOGD("CTS is low");
+    if (fw_upload_ComGetCTS_after_fw_dwnl(mchar_fd, FW_INIT_TIMEOUT) == true) {
+      VND_LOGD("FW Init Complete,proceeding with configurations");
     } else {
-      VND_LOGE("wait CTS low timeout. Timeout_duration = %d", MAX_CTS_TIMEOUT);
+      VND_LOGD("FW Init timeout= %d expired,proceeding with configurations",
+               FW_INIT_TIMEOUT);
     }
   } else {
     VND_LOGV("Download Error, Error code = %d", ulResult);

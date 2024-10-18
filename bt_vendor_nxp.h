@@ -43,7 +43,7 @@
 
 /*================================== Macros ==================================*/
 
-#define BT_HAL_VERSION "009.025"
+#define BT_HAL_VERSION "009.027"
 
 #define TIMEOUT_SEC 6
 #define RW_SUCCESSFUL (1)
@@ -190,7 +190,7 @@ extern const bt_vendor_callbacks_t* vnd_cb;
 extern char pFilename_cal_data[];
 extern int8_t ble_1m_power;
 extern int8_t ble_2m_power;
-extern uint8_t bt_max_power_sel;
+extern uint8_t bt_max_power;
 extern uint8_t set_1m_2m_power;
 extern uint8_t bt_set_max_power;
 extern uint8_t independent_reset_mode;

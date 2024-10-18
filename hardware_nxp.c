@@ -85,7 +85,7 @@
 #define HCI_CMD_NXP_CUSTOM_OPCODE 0xFD60
 #define HCI_CMD_NXP_SUB_ID_BLE_TX_POWER 0x01
 #define HCI_CMD_NXP_BLE_TX_POWER_DATA_SIZE 0x03
-#define HCI_CMD_NXP_BT_TX_POWER_DATA_SIZE 0x01
+#define HCI_CMD_NXP_BT_TX_POWER_DATA_SIZE 0x02
 #define HCI_CMD_NXP_READ_FW_REVISION 0xFC0F
 #define HCI_CMD_NXP_WRITE_BT_TX_POWER 0xFCEE
 #define HCI_CMD_NXP_INDEPENDENT_RESET_SETTING 0xFC0D
@@ -974,7 +974,9 @@ static int8 hw_bt_enable_max_power_level_cmd(void) {
     packet = make_command(opcode, HCI_CMD_NXP_BT_TX_POWER_DATA_SIZE);
     if (packet) {
       stream = &packet->data[HCI_COMMAND_HEADER_SIZE];
-      stream[0] = bt_max_power_sel;
+      stream[0] = 0x01;
+      stream[1] = bt_max_power;
+      VND_LOGD("Setting BT Trasmit Max Power level at %d dbm", bt_max_power);
       ret = hw_bt_send_packet(packet, opcode, hw_config_seq);
     }
   }

@@ -44,20 +44,38 @@ optional keys are listed below:
 	pFilename_cal_data: bt calibration file, example: pFilename_cal_data = /vendor/firmware/BtCalData_ext_Boreal_P0_V2.conf
 						Note: The Baud rate within calibration file should be same as baudrate_bt(default value is 3000000) in bt_vendor.conf file.
 
-	ble_1m_power: Set signed Bluetooth LE Transmit Power level for 1M PHY, example: ble_1m_power = 10
-	ble_2m_power: Set signed Bluetooth LE Transmit Power level for 2M PHY, example: ble_1m_power = -5
-				Valid Supported Values:
-						Power Class		Minimum Tx Power 	Maximum Tx Power 
-							1.5				 -20dbm				 10dbm
-							2				 -20dbm				 4 dbm
-				Note: Incase the paramter is not set, firmware default values will be used.
+	pFilename_tx_power: Allows you to set persist system property that holds the path to the power configuration file.
+	Steps for usage:
+		1.Create Power configuration file(example:btpower_XX.conf) and add BT/BLE power settings
+		(Here XX is alpha-2 country codes like US,GA..etc)
+		Example: Content of btpower_US.conf
+		ble_1m_power = 6
+		ble_2m_power = 5
+		bt_max_power = 6
 
-	bt_max_power_sel: Update classic BT max transmit power level.
-				Supported values:
-					bt_max_power_sel = 0 (Use firmware default max power level)
-					bt_max_power_sel = 1 (Initial power provided by calibration file will be used as reference for Max Tx power)
+		2.Set the path of above created file persist system property
+		Example: Say above created file is at /vendor/firmware/nxp/btpower_XX.conf
+				 $setprop persist.btpwr.path /vendor/firmware/nxp/btpower_XX.conf
 
-				Note: This flag updates the maximum transmit power level.
+		3.Configure pFilename_tx_power in bt_vendor.conf file to link it to system property
+		Example: pFilename_tx_power= persist.btpwr.path
+
+		Following are supported values for BT/BLE Power Configuration file:
+		ble_1m_power: Set signed Bluetooth LE Transmit Power level for 1M PHY, example: ble_1m_power = 10
+		ble_2m_power: Set signed Bluetooth LE Transmit Power level for 2M PHY, example: ble_1m_power = -5
+					Valid Supported Values:
+							Power Class		Minimum Tx Power 	Maximum Tx Power
+								1.5				 -20dbm				 10dbm
+								2				 -20dbm				 4 dbm
+					Note: Incase the paramter is not set, firmware default values will be used.
+
+		bt_max_power: Set signed Maximum Power Value for classic BT
+		Example:	bt_max_power = 7
+					bt_max_power = 127
+					Valid Supported values:
+						Parameter Value 				Description
+							127						Initial power from calibration file to be used.
+						-20dBm to +12dBm    	    User defined maximum power level
 
 	pFilename_fw_init_config_bin: Provide path of FW initialization configuration binary.
 

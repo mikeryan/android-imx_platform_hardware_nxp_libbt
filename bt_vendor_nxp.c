@@ -114,7 +114,7 @@ int write_bdaddrss = 0;
 int8_t ble_1m_power = 0;
 int8_t ble_2m_power = 0;
 uint8_t set_1m_2m_power = 0;
-uint8_t bt_max_power_sel = 0;
+uint8_t bt_max_power = 0;
 uint8_t bt_set_max_power = 0;
 uint8_t independent_reset_gpio_pin = 0xFF;
 bool enable_sco_config = true;
@@ -160,6 +160,7 @@ uint8_t enable_poke_controller = 0;
 static bool send_boot_sleep_trigger = false;
 #endif
 char pFilename_cal_data[MAX_PATH_LEN];
+char pFilename_tx_pwr[MAX_PATH_LEN];
 static int rfkill_id = -1;
 static char* rfkill_state_path = NULL;
 static uint32_t last_baudrate = 0;
@@ -358,6 +359,74 @@ static int set_bd_address_buf(char* p_conf_name, char* p_conf_value,
   return 0;
 }
 
+static int load_ble_tx_power_conf(char* p_conf_name, char* p_conf_value,
+                                  void* p_conf_var, int param) {
+  char property_name[MAX_PATH_LEN] = {0};
+  char* file_path;
+  char line[CONF_MAX_LINE_LEN + 1] = {0}; /* add 1 for \0 char */
+  char* key;
+  char* value;
+  UNUSED(p_conf_name);
+  UNUSED(param);
+
+  /* Retrieve the system property value which contains the file path*/
+  if (p_conf_value != NULL) {
+    strncpy(property_name, p_conf_value, sizeof(property_name) - 1);
+    VND_LOGD("Retriving the system property value: %s", property_name);
+  } else {
+    VND_LOGE("Failed to retrieve system property value");
+    return -1;
+  }
+
+  /* Fetch the file path based on property name */
+  file_path = (char*)p_conf_var;
+  if (property_get(property_name, file_path, "") > 0) {
+    VND_LOGD("File path:%s successfully retrieved", file_path);
+  } else {
+    VND_LOGE("Failed to retrieve property: %s", property_name);
+    return -1;
+  }
+
+  /* Open and parse the configuration file */
+  FILE* file = fopen(file_path, "r");
+  if (file == NULL) {
+    VND_LOGE("File open error at %s Error:%s", file_path, strerror(errno));
+    return -1;
+  }
+
+  /* Reads configuration file line by line, expecting each line to be a
+   * key-value pair.The key identifies the parameter(e.g.ble_1m_power),
+   * and the value is parsed and used to set the corresponding power
+   * value */
+
+  while (fgets(line, sizeof(line), file)) {
+    /* Skip the comments lines */
+    if (line[0] == CONF_COMMENT) continue;
+
+    key = strtok(line, CONF_DELIMITERS);
+    value = strtok(NULL, CONF_VALUES_DELIMITERS);
+    if (key && value) {
+      key = strtok(key, " \t");
+      value = strtok(value, " \t");
+      if (strcmp(key, "ble_1m_power") == 0) {
+        set_ble_1m_power(key, value, &ble_1m_power, 0);
+      } else if (strcmp(key, "ble_2m_power") == 0) {
+        set_ble_2m_power(key, value, &ble_2m_power, 0);
+      } else if (strcmp(key, "bt_max_power") == 0) {
+        set_bt_tx_power(key, value, &bt_max_power, 0);
+      } else {
+        VND_LOGW("Invalid key: key=%s", key);
+      }
+    } else {
+      VND_LOGW("Invalid format in line:%s", line);
+    }
+  }
+
+  fclose(file);
+
+  return 0;
+}
+
 #ifdef UART_DOWNLOAD_FW
 
 static int set_pFileName_image(char* p_conf_name, char* p_conf_value,
@@ -405,9 +474,6 @@ static const conf_entry_t conf_table[] = {
     {"bd_address", set_bd_address_buf, &write_bd_address, 0},
     {"pFilename_fw_init_config_bin", set_param_string,
      &pFilename_fw_init_config_bin, 0},
-    {"ble_1m_power", set_ble_1m_power, &set_1m_2m_power, 0},
-    {"ble_2m_power", set_ble_2m_power, &ble_2m_power, 0},
-    {"bt_max_power_sel", set_bt_tx_power, &bt_max_power_sel, 0},
     {"independent_reset_gpio_pin", set_param_uint8, &independent_reset_gpio_pin,
      0},
     {"oob_ir_host_gpio_pin", set_param_uint8, &ir_host_gpio_pin, 0},
@@ -430,6 +496,7 @@ static const conf_entry_t conf_table[] = {
 #endif
     {"enable_pdn_recovery", set_param_bool, &enable_pdn_recovery, 0},
     {"pFilename_cal_data", set_param_string, &pFilename_cal_data, 0},
+    {"pFilename_tx_pwr", load_ble_tx_power_conf, &pFilename_tx_pwr, 0},
     {"vhal_trace_level", set_param_uint32, &vhal_trace_level, 0},
     {"enable_sco_config", set_param_bool, &enable_sco_config, 0},
     {"use_controller_addr", set_param_bool, &use_controller_addr, 0},
@@ -1515,7 +1582,15 @@ static int bt_vnd_op(bt_vendor_opcode_t opcode, void* param) {
           VND_LOGD("enable_pdn_recovery %d", enable_pdn_recovery);
           VND_LOGD("enable_lpm %d", enable_lpm);
           VND_LOGD("use_controller_addr %d", use_controller_addr);
-          VND_LOGD("bt_max_power_sel %d", bt_max_power_sel);
+          if (set_1m_2m_power & BLE_SET_1M_POWER) {
+            VND_LOGD("BLE 1M Power set to %ddBm", ble_1m_power);
+          }
+          if (set_1m_2m_power & BLE_SET_2M_POWER) {
+            VND_LOGD("BLE 2M Power set to %ddBm", ble_2m_power);
+          }
+          if (bt_set_max_power) {
+            VND_LOGD("BT Max Power set to %ddBm", bt_max_power);
+          }
         }
 #endif
       }
@@ -1543,15 +1618,25 @@ static int bt_vnd_op(bt_vendor_opcode_t opcode, void* param) {
           baudrate = baudrate_fw_init;
 #endif
 #ifdef UART_DOWNLOAD_FW
-          if (send_boot_sleep_trigger) {
-            if (get_prop_int32(PROP_BLUETOOTH_BOOT_SLEEP_TRIGGER) == 0) {
-              VND_LOGD("boot sleep trigger is enabled and its first boot");
-              mchar_fd = uart_init_open(mchar_port, baudrate, 1);
-              close(mchar_fd);
+          if ((send_boot_sleep_trigger) &&
+              (get_prop_int32(PROP_BLUETOOTH_BOOT_SLEEP_TRIGGER) == 0)) {
+            VND_LOGD("boot sleep trigger is enabled and its first boot");
+            mchar_fd = uart_init_open(mchar_port, baudrate, 1);
+            /* Allow sometime for SoC to detect as level trigger wakeup */
+            usleep(5 * 1000);
+            /* Disable HW Flow control to toggle CTS line for BT Core Wakeup */
+            ti.c_cflag &= ~CRTSCTS;
+            if (tcsetattr(mchar_fd, TCSANOW, &ti) < 0) {
+              VND_LOGE("Error: %s (%d)", strerror(errno), errno);
+              return -1;
             }
+            tcflush(mchar_fd, TCIOFLUSH);
+          } else {
+            mchar_fd = uart_init_open(mchar_port, baudrate, 0);
           }
-#endif
+#else
           mchar_fd = uart_init_open(mchar_port, baudrate, 0);
+#endif
           if ((independent_reset_mode == IR_MODE_INBAND_VSC) &&
               (mchar_fd > 0)) {
             if (bt_vnd_send_inband_ir(baudrate) != 0) {
