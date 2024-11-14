@@ -1,5 +1,10 @@
 # Change Log
 All notable changes in Bluetooth Vendor Hardware Abstraction Layer(BT VHAL) will be documented in this file.
+## [009.028] - 2024-October-01
+
+### Added
+- Reduced Bluetooth VHAL system property flag string length under 31 bytes to
+  meet some customer platform system property size limitation.
 
 ## [009.027] - 2024-September-13
 

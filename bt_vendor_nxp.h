@@ -43,7 +43,7 @@
 
 /*================================== Macros ==================================*/
 
-#define BT_HAL_VERSION "009.027"
+#define BT_HAL_VERSION "009.029"
 
 #define TIMEOUT_SEC 6
 #define RW_SUCCESSFUL (1)
@@ -95,10 +95,10 @@
 #define PROP_VENDOR_TRIGGER_PDN "vendor.nxp.trigger_pdn"
 #define PDN_RECOVERY_THRESHOLD (2)
 #define PROP_BLUETOOTH_FW_DOWNLOADED "bluetooth.nxp.fw_downloaded"
-#define PROP_BLUETOOTH_INBAND_CONFIGURED ("bluetooth.nxp.inband_ir_configured")
+#define PROP_BLUETOOTH_INBAND_CONFIGURED "bluetooth.nxp.inband_ir_config"
 
 #define PROP_BLUETOOTH_BOOT_SLEEP_TRIGGER \
-  "bluetooth.nxp.sent_boot_sleep_triggered"
+  "bluetooth.nxp.bsp_triggered"
 /* Run-time configuration file */
 #ifndef VENDOR_LIB_CONF_FILE
 #define VENDOR_LIB_CONF_FILE "/vendor/etc/bluetooth/bt_vendor.conf"

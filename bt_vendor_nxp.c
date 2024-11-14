@@ -1469,6 +1469,21 @@ static void send_exit_heartbeat_mode(void) {
   return;
 }
 
+static int bt_vnd_trigger_pdn() {
+  int init_attempted = get_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED);
+  init_attempted = (init_attempted == -1) ? 0 : init_attempted;
+  if (++init_attempted >= PDN_RECOVERY_THRESHOLD) {
+    VND_LOGE("%s: %s(%d) >= %d, Triggering PDn recovery.\n", __FUNCTION__,
+             PROP_BLUETOOTH_INIT_ATTEMPTED, init_attempted,
+             PDN_RECOVERY_THRESHOLD);
+    set_prop_int32(PROP_VENDOR_TRIGGER_PDN, 1);
+    set_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED, 0);
+  } else {
+    set_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED, init_attempted);
+  }
+  return -1;
+}
+
 /*****************************************************************************
 **
 **   BLUETOOTH VENDOR INTERFACE LIBRARY FUNCTIONS
@@ -1640,6 +1655,10 @@ static int bt_vnd_op(bt_vendor_opcode_t opcode, void* param) {
           if ((independent_reset_mode == IR_MODE_INBAND_VSC) &&
               (mchar_fd > 0)) {
             if (bt_vnd_send_inband_ir(baudrate) != 0) {
+              set_prop_int32(PROP_BLUETOOTH_INBAND_CONFIGURED, 0);
+              if (enable_pdn_recovery == true) {
+                return bt_vnd_trigger_pdn();
+              }
               return -1;
             }
           }
@@ -1659,19 +1678,7 @@ static int bt_vnd_op(bt_vendor_opcode_t opcode, void* param) {
             VND_LOGE("detect_and_download_fw failed");
             set_prop_int32(PROP_BLUETOOTH_FW_DOWNLOADED, 0);
             if (enable_pdn_recovery == true) {
-              int init_attempted =
-                  get_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED);
-              init_attempted = (init_attempted == -1) ? 0 : init_attempted;
-              if (++init_attempted >= PDN_RECOVERY_THRESHOLD) {
-                VND_LOGE("%s: %s(%d) > %d, Triggering PDn recovery.\n",
-                         __FUNCTION__, PROP_BLUETOOTH_INIT_ATTEMPTED,
-                         init_attempted, PDN_RECOVERY_THRESHOLD);
-                set_prop_int32(PROP_VENDOR_TRIGGER_PDN, 1);
-                set_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED, 0);
-              } else {
-                set_prop_int32(PROP_BLUETOOTH_INIT_ATTEMPTED, init_attempted);
-                ALOGI("%s:%d\n", PROP_VENDOR_TRIGGER_PDN, init_attempted);
-              }
+              return bt_vnd_trigger_pdn();
             }
             return -1;
           }

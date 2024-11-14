@@ -62,7 +62,6 @@ endif
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     liblog \
-    libprotobuf-cpp-lite \
     libbase \
     libchrome
 LOCAL_MODULE := libbt-vendor
